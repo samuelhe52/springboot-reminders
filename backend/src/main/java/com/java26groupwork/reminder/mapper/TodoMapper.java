@@ -14,15 +14,15 @@ import java.util.List;
 @Mapper
 public interface TodoMapper {
     @Insert("""
-            insert into todo(user_id, category_id, title, content, status, deadline, create_time, update_time)
-            values (#{userId}, #{categoryId}, #{title}, #{content}, #{status}, #{deadline}, #{createTime}, #{updateTime})
+            insert into todo(user_id, category_id, title, notes, status, deadline, create_time, update_time)
+            values (#{userId}, #{categoryId}, #{title}, #{notes}, #{status}, #{deadline}, #{createTime}, #{updateTime})
             """)
     @Options(useGeneratedKeys = true, keyProperty = "id")
     int insert(Todo todo);
 
     @Select({
             "<script>",
-            "select id, user_id, category_id, title, content, status, deadline, create_time, update_time",
+            "select id, user_id, category_id, title, notes, status, deadline, create_time, update_time",
             "from todo",
             "where user_id = #{userId}",
             "<if test='status != null'>and status = #{status}</if>",
@@ -37,7 +37,7 @@ public interface TodoMapper {
             "update todo",
             "set category_id = #{categoryId},",
             "title = #{title},",
-            "content = #{content},",
+            "notes = #{notes},",
             "status = #{status},",
             "deadline = #{deadline},",
             "update_time = #{updateTime}",

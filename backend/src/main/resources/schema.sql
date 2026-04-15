@@ -24,7 +24,7 @@ create table if not exists todo
     user_id     bigint       not null,
     category_id bigint       null,
     title       varchar(100) not null,
-    content     text         null,
+    notes     text         null,
     status      tinyint      not null,
     deadline    datetime     null,
     create_time datetime     not null,

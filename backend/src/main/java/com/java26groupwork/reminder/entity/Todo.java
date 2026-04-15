@@ -11,7 +11,7 @@ public class Todo {
     private Long userId;
     private Long categoryId;
     private String title;
-    private String content;
+    private String notes;
     private Integer status;
     @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss")
     private LocalDateTime deadline;

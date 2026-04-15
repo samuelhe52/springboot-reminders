@@ -1,8 +1,6 @@
 services:
     mysql:
-        build:
-            context: .
-            dockerfile: docker/mysql/Dockerfile
+        image: mysql:8.4
         container_name: reminder-mysql
         ports:
             - "3306:3306"
@@ -11,6 +9,7 @@ services:
             MYSQL_DATABASE: reminder_db
             TZ: Asia/Shanghai
         volumes:
+            - ./backend/src/main/resources/schema.sql:/docker-entrypoint-initdb.d/01-schema.sql:ro
             - mysql_data:/var/lib/mysql
 
 volumes:
