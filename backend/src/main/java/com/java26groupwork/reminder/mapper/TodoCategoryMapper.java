@@ -50,4 +50,14 @@ public interface TodoCategoryMapper {
               and user_id = #{userId}
             """)
     int countByIdAndUserId(@Param("id") Long id, @Param("userId") Long userId);
+
+    @Select("""
+            select id
+            from todo_category
+            where user_id = #{userId}
+              and name = #{name}
+            order by id asc
+            limit 1
+            """)
+    Long findIdByUserIdAndName(@Param("userId") Long userId, @Param("name") String name);
 }

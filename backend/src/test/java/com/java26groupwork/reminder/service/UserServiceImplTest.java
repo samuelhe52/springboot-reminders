@@ -1,6 +1,7 @@
 package com.java26groupwork.reminder.service;
 
 import com.java26groupwork.reminder.entity.User;
+import com.java26groupwork.reminder.mapper.TodoCategoryMapper;
 import com.java26groupwork.reminder.mapper.UserMapper;
 import com.java26groupwork.reminder.service.impl.UserServiceImpl;
 import org.junit.jupiter.api.Test;
@@ -15,12 +16,16 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
+import static org.mockito.Mockito.times;
 
 @ExtendWith(MockitoExtension.class)
 class UserServiceImplTest {
 
     @Mock
     private UserMapper userMapper;
+
+    @Mock
+    private TodoCategoryMapper categoryMapper;
 
     @InjectMocks
     private UserServiceImpl userService;
@@ -41,6 +46,7 @@ class UserServiceImplTest {
     @Test
     void registerShouldSetCreateTimeAndInsertUser() {
         User user = new User();
+        user.setId(1L);
         user.setUsername("alice");
         user.setPassword("123456");
 
@@ -48,6 +54,7 @@ class UserServiceImplTest {
 
         assertNotNull(user.getCreateTime());
         verify(userMapper).insert(user);
+        verify(categoryMapper, times(5)).insert(any());
     }
 
     @Test

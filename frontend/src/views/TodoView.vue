@@ -1,38 +1,28 @@
 <template>
   <div class="page">
-    <div class="toolbar">
-      <h2>Todo List</h2>
-      <el-space>
-        <el-button @click="logout">Logout</el-button>
-      </el-space>
-    </div>
+    <header class="toolbar">
+      <span class="app-name">待办事项</span>
+      <el-button text @click="logout">退出登录</el-button>
+    </header>
 
     <div class="content-layout">
       <aside class="category-sidebar">
-        <h3>Categories</h3>
-        <el-space>
+        <h3>分类</h3>
+        <div class="cat-add-row">
           <el-input
             v-model="categoryName"
-            placeholder="Category name"
-            style="width: 180px"
+            placeholder="分类名称"
           />
-          <el-button type="primary" @click="addCategory">Add</el-button>
-        </el-space>
-        <el-button
-          text
-          size="small"
-          style="padding-left: 0; margin-top: 8px"
-          @click="loadCategories"
-        >
-          Refresh Categories
-        </el-button>
+          <el-button type="primary" @click="addCategory">添加</el-button>
+        </div>
+
         <el-scrollbar max-height="460px" style="margin-top: 12px">
           <div
             class="category-item"
             :class="{ active: filters.categoryId === null }"
             @click="selectCategory(null)"
           >
-            <span>All</span>
+            <span>全部</span>
           </div>
           <div
             v-for="item in categories"
@@ -41,17 +31,17 @@
             :class="{ active: filters.categoryId === item.id }"
             @click="selectCategory(item.id)"
           >
-            <span class="name">{{ item.name }}</span>
+            <span class="name">{{ catLabel(item.name) }}</span>
             <el-space>
               <el-button link size="small" @click.stop="editCategory(item)"
-                >Rename</el-button
+                >重命名</el-button
               >
               <el-button
                 link
                 size="small"
                 type="danger"
                 @click.stop="removeCategory(item.id)"
-                >Delete</el-button
+                >删除</el-button
               >
             </el-space>
           </div>
@@ -59,56 +49,69 @@
       </aside>
 
       <section class="todo-main">
-        <el-space wrap>
-          <el-select
-            v-model="filters.categoryId"
-            placeholder="Category"
-            clearable
-            style="width: 180px"
-          >
-            <el-option
-              v-for="item in categories"
-              :key="item.id"
-              :label="item.name"
-              :value="item.id"
-            />
-          </el-select>
-          <el-select
-            v-model="filters.status"
-            placeholder="Status"
-            clearable
-            style="width: 140px"
-          >
-            <el-option label="Unfinished" :value="0" />
-            <el-option label="Finished" :value="1" />
-          </el-select>
-          <el-button @click="loadList">Search</el-button>
-          <el-button @click="resetFilters">Reset</el-button>
-          <el-button type="primary" @click="openAddDialog">Add Todo</el-button>
-        </el-space>
+        <div class="filters">
+          <div class="filter-controls">
+            <el-select
+              v-model="filters.categoryId"
+              placeholder="分类"
+              clearable
+              style="width: 160px"
+            >
+              <el-option
+                v-for="item in categories"
+                :key="item.id"
+                :label="catLabel(item.name)"
+                :value="item.id"
+              />
+            </el-select>
+            <el-select
+              v-model="filters.status"
+              placeholder="状态"
+              clearable
+              style="width: 130px"
+            >
+              <el-option label="未完成" :value="0" />
+              <el-option label="已完成" :value="1" />
+            </el-select>
+            <el-button @click="loadList">搜索</el-button>
+            <el-button @click="resetFilters">重置</el-button>
+          </div>
+          <el-button type="primary" @click="openAddDialog">+ 新建任务</el-button>
+        </div>
 
-        <el-table :data="list" style="margin-top: 16px">
-          <el-table-column prop="title" label="Title" />
-          <el-table-column label="Category" width="140">
+        <el-table :data="list">
+          <el-table-column prop="title" label="标题" />
+          <el-table-column label="分类" width="140">
             <template #default="{ row }">{{
               getCategoryName(row.categoryId)
             }}</template>
           </el-table-column>
-          <el-table-column prop="notes" label="Notes" />
-          <el-table-column prop="status" label="Status" width="120">
-            <template #default="{ row }">{{
-              row.status === 1 ? "Done" : "Todo"
-            }}</template>
-          </el-table-column>
-          <el-table-column prop="deadline" label="Deadline" width="180" />
-          <el-table-column label="Actions" width="280">
+          <el-table-column label="备注" min-width="160">
             <template #default="{ row }">
-              <el-button link @click="toggleStatus(row)">{{
-                row.status === 1 ? "Mark Todo" : "Mark Done"
-              }}</el-button>
-              <el-button link @click="openEditDialog(row)">Edit</el-button>
+              <span
+                v-if="row.notes"
+                class="notes-cell"
+                @click="openNotesDrawer(row)"
+              >{{ row.notes }}</span>
+              <span v-else class="notes-empty">—</span>
+            </template>
+          </el-table-column>
+          <el-table-column prop="status" label="状态" width="100">
+            <template #default="{ row }">
+              <el-tag
+                :type="row.status === 1 ? 'success' : 'info'"
+                size="small"
+                round
+              >{{ row.status === 1 ? "已完成" : "进行中" }}</el-tag>
+            </template>
+          </el-table-column>
+          <el-table-column prop="deadline" label="截止日期" width="180" />
+          <el-table-column label="操作" width="240">
+            <template #default="{ row }">
+              <el-button link @click="toggleStatus(row)">{{ row.status === 1 ? "标记未完成" : "标记已完成" }}</el-button>
+              <el-button link @click="openEditDialog(row)">编辑</el-button>
               <el-button link type="danger" @click="remove(row.id)"
-                >Delete</el-button
+                >删除</el-button
               >
             </template>
           </el-table-column>
@@ -118,53 +121,74 @@
 
     <el-dialog
       v-model="dialogVisible"
-      :title="form.id ? 'Edit Todo' : 'Add Todo'"
+      :title="form.id ? '编辑任务' : '新建任务'"
       width="560px"
     >
       <el-form :model="form" label-width="90px">
-        <el-form-item label="Title">
+        <el-form-item label="标题">
           <el-input v-model="form.title" />
         </el-form-item>
-        <el-form-item label="Notes">
+        <el-form-item label="备注">
           <el-input v-model="form.notes" type="textarea" :rows="3" />
         </el-form-item>
-        <el-form-item label="Category">
+        <el-form-item label="分类">
           <el-select v-model="form.categoryId" clearable style="width: 100%">
             <el-option
               v-for="item in categories"
               :key="item.id"
-              :label="item.name"
+              :label="catLabel(item.name)"
               :value="item.id"
             />
           </el-select>
         </el-form-item>
-        <el-form-item label="Status" v-if="form.id">
+        <el-form-item label="状态" v-if="form.id">
           <el-select v-model="form.status" style="width: 100%">
-            <el-option label="Unfinished" :value="0" />
-            <el-option label="Finished" :value="1" />
+            <el-option label="未完成" :value="0" />
+            <el-option label="已完成" :value="1" />
           </el-select>
         </el-form-item>
-        <el-form-item label="Deadline">
+        <el-form-item label="截止日期">
           <el-date-picker
             v-model="form.deadline"
             type="datetime"
-            placeholder="Select deadline"
+            placeholder="选择截止日期"
             value-format="YYYY-MM-DD HH:mm:ss"
             style="width: 100%"
           />
         </el-form-item>
       </el-form>
       <template #footer>
-        <el-button @click="dialogVisible = false">Cancel</el-button>
-        <el-button type="primary" @click="submitForm">Save</el-button>
+        <el-button @click="dialogVisible = false">取消</el-button>
+        <el-button type="primary" @click="submitForm">保存</el-button>
       </template>
     </el-dialog>
+
+    <el-drawer
+      v-model="notesDrawerVisible"
+      :title="notesDrawerTitle"
+      direction="rtl"
+      size="360px"
+    >
+      <p class="notes-drawer-body">{{ notesDrawerContent }}</p>
+    </el-drawer>
   </div>
 </template>
 
 <script setup>
 import { onMounted, reactive, ref } from "vue";
-import { ElMessage, ElMessageBox } from "element-plus";
+import { ElMessageBox, ElNotification } from "element-plus";
+
+const CATEGORY_NAMES = {
+  Default: "默认",
+  Work: "工作",
+  Personal: "个人",
+  Study: "学习",
+  Shopping: "购物",
+};
+const catLabel = (name) => CATEGORY_NAMES[name] ?? name;
+
+const notify = (message, type = "success") =>
+  ElNotification({ message, type, position: "bottom-right", duration: 2500 });
 import { useRouter } from "vue-router";
 import {
   addCategoryApi,
@@ -186,6 +210,16 @@ const categoryName = ref("");
 const list = ref([]);
 const filters = reactive({ status: null, categoryId: null });
 const dialogVisible = ref(false);
+const notesDrawerVisible = ref(false);
+const notesDrawerTitle = ref("");
+const notesDrawerContent = ref("");
+
+const openNotesDrawer = (row) => {
+  notesDrawerTitle.value = row.title || "备注";
+  notesDrawerContent.value = row.notes;
+  notesDrawerVisible.value = true;
+};
+
 const form = reactive({
   id: null,
   title: "",
@@ -209,24 +243,29 @@ const addCategory = async () => {
   if (!categoryName.value) return;
   await addCategoryApi({ name: categoryName.value });
   categoryName.value = "";
-  ElMessage.success("Category added");
+  notify("分类已添加");
   await loadCategories();
 };
 
 const editCategory = async (row) => {
-  const { value } = await ElMessageBox.prompt("New category name", "Rename", {
+  const { value } = await ElMessageBox.prompt("输入新分类名称", "重命名", {
     inputValue: row.name,
   });
   if (!value) return;
   await updateCategoryApi({ id: row.id, name: value });
-  ElMessage.success("Category updated");
+  notify("分类已更新");
   await loadCategories();
   await loadList();
 };
 
 const removeCategory = async (id) => {
+  await ElMessageBox.confirm("确定要删除该分类吗？", "删除确认", {
+    confirmButtonText: "删除",
+    cancelButtonText: "取消",
+    type: "warning",
+  });
   await deleteCategoryApi({ id });
-  ElMessage.success("Category deleted");
+  notify("分类已删除");
   if (filters.categoryId === id) {
     filters.categoryId = null;
   }
@@ -250,6 +289,8 @@ const resetForm = () => {
 
 const openAddDialog = () => {
   resetForm();
+  const defaultCat = categories.value.find((c) => c.name === "Default");
+  if (defaultCat) form.categoryId = defaultCat.id;
   dialogVisible.value = true;
 };
 
@@ -277,10 +318,10 @@ const submitForm = async () => {
 
   if (form.id) {
     await updateTodoApi(payload);
-    ElMessage.success("Updated");
+    notify("已更新");
   } else {
     await addTodoApi(payload);
-    ElMessage.success("Added");
+    notify("已添加");
   }
 
   dialogVisible.value = false;
@@ -289,13 +330,18 @@ const submitForm = async () => {
 
 const toggleStatus = async (row) => {
   await updateTodoApi({ ...row, status: row.status === 1 ? 0 : 1 });
-  ElMessage.success("Updated");
+  notify("已更新");
   await loadList();
 };
 
 const remove = async (id) => {
+  await ElMessageBox.confirm("确定要删除该任务吗？", "删除确认", {
+    confirmButtonText: "删除",
+    cancelButtonText: "取消",
+    type: "warning",
+  });
   await deleteTodoApi({ id });
-  ElMessage.success("Deleted");
+  notify("已删除");
   await loadList();
 };
 
@@ -306,9 +352,9 @@ const resetFilters = async () => {
 };
 
 const getCategoryName = (categoryId) => {
-  if (!categoryId) return "Uncategorized";
+  if (!categoryId) return "未分类";
   const category = categories.value.find((item) => item.id === categoryId);
-  return category ? category.name : "Uncategorized";
+  return category ? catLabel(category.name) : "未分类";
 };
 
 const logout = async () => {
@@ -325,36 +371,84 @@ onMounted(async () => {
 <style scoped>
 .page {
   max-width: 1200px;
-  margin: 40px auto;
-  padding: 0 16px;
+  margin: 0 auto;
+  padding: 0 24px 32px;
+  min-height: 100vh;
+  color: var(--app-text);
 }
 
 .toolbar {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  margin-bottom: 16px;
+  padding: 16px 0;
+  margin-bottom: 20px;
+  border-bottom: 1px solid var(--app-panel-border);
+}
+
+.app-name {
+  font-size: 18px;
+  font-weight: 700;
 }
 
 .content-layout {
   display: grid;
-  grid-template-columns: 280px 1fr;
+  grid-template-columns: 260px 1fr;
   gap: 16px;
+  align-items: start;
 }
 
 .category-sidebar {
-  border: 1px solid var(--el-border-color-light);
+  border: 1px solid var(--app-panel-border);
   border-radius: 12px;
-  padding: 12px;
-  background: var(--el-bg-color);
+  padding: 16px;
+  background: var(--app-panel-bg);
+  box-shadow: var(--app-shadow);
 }
 
 .category-sidebar h3 {
-  margin: 0 0 10px;
+  margin: 0 0 12px;
+  font-size: 12px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.6px;
+  color: var(--app-muted);
+}
+
+.cat-add-row {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+}
+
+.cat-add-row .el-input {
+  flex: 1;
+  min-width: 0;
 }
 
 .todo-main {
   min-width: 0;
+  border: 1px solid var(--app-panel-border);
+  border-radius: 12px;
+  padding: 16px;
+  background: var(--app-panel-bg);
+  box-shadow: var(--app-shadow);
+}
+
+.filters {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  margin-bottom: 16px;
+  flex-wrap: wrap;
+}
+
+.filter-controls {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
 }
 
 .category-item {
@@ -368,7 +462,7 @@ onMounted(async () => {
 }
 
 .category-item + .category-item {
-  margin-top: 6px;
+  margin-top: 4px;
 }
 
 .category-item:hover {
@@ -377,12 +471,46 @@ onMounted(async () => {
 
 .category-item.active {
   background: var(--el-color-primary-light-9);
+  font-weight: 500;
 }
 
 .name {
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
+  flex: 1;
+  min-width: 0;
+}
+
+.notes-cell {
+  display: block;
+  max-width: 200px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  cursor: pointer;
+  color: var(--el-color-primary);
+}
+
+.notes-cell:hover {
+  text-decoration: underline;
+}
+
+.notes-empty {
+  color: var(--app-muted);
+}
+
+.notes-drawer-body {
+  margin: 0;
+  line-height: 1.7;
+  white-space: pre-wrap;
+  overflow-wrap: break-word;
+  word-break: break-word;
+  color: var(--app-text);
+}
+
+:global(html.dark) .category-item.active {
+  background: rgba(59, 130, 246, 0.2);
 }
 
 @media (max-width: 960px) {

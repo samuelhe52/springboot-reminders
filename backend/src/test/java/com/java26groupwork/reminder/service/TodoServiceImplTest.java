@@ -13,6 +13,7 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
@@ -32,10 +33,13 @@ class TodoServiceImplTest {
     void addShouldSetDefaultFields() {
         Todo todo = new Todo();
         todo.setTitle("Finish homework");
+        when(categoryMapper.findIdByUserIdAndName(1L, "Default")).thenReturn(10L);
+        when(categoryMapper.countByIdAndUserId(10L, 1L)).thenReturn(1);
 
         todoService.add(1L, todo);
 
         assertEquals(1L, todo.getUserId());
+        assertEquals(10L, todo.getCategoryId());
         assertEquals(0, todo.getStatus());
         assertNotNull(todo.getCreateTime());
         assertNotNull(todo.getUpdateTime());

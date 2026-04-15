@@ -1,6 +1,7 @@
 package com.java26groupwork.reminder.service.impl;
 
 import com.java26groupwork.reminder.entity.Todo;
+import com.java26groupwork.reminder.entity.TodoCategory;
 import com.java26groupwork.reminder.mapper.TodoCategoryMapper;
 import com.java26groupwork.reminder.mapper.TodoMapper;
 import com.java26groupwork.reminder.service.TodoService;
@@ -13,6 +14,8 @@ import java.util.Objects;
 @Service
 public class TodoServiceImpl implements TodoService {
 
+    private static final String DEFAULT_CATEGORY_NAME = "Default";
+
     private final TodoMapper todoMapper;
     private final TodoCategoryMapper categoryMapper;
 
@@ -23,6 +26,7 @@ public class TodoServiceImpl implements TodoService {
 
     @Override
     public void add(Long userId, Todo todo) {
+        applyDefaultCategoryIfMissing(userId, todo);
         validateTodo(todo, userId);
         todo.setUserId(userId);
         todo.setStatus(0);
@@ -74,6 +78,22 @@ public class TodoServiceImpl implements TodoService {
         if (todo.getCategoryId() != null && categoryMapper.countByIdAndUserId(todo.getCategoryId(), userId) == 0) {
             throw new RuntimeException("Category not found");
         }
+    }
+
+    private void applyDefaultCategoryIfMissing(Long userId, Todo todo) {
+        if (todo == null || todo.getCategoryId() != null) {
+            return;
+        }
+        Long defaultCategoryId = categoryMapper.findIdByUserIdAndName(userId, DEFAULT_CATEGORY_NAME);
+        if (defaultCategoryId == null) {
+            TodoCategory category = new TodoCategory();
+            category.setUserId(userId);
+            category.setName(DEFAULT_CATEGORY_NAME);
+            category.setCreateTime(LocalDateTime.now());
+            categoryMapper.insert(category);
+            defaultCategoryId = category.getId();
+        }
+        todo.setCategoryId(defaultCategoryId);
     }
 
     private boolean isBlank(String value) {
