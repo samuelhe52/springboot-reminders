@@ -1,6 +1,10 @@
 .DS_Store
 
 .vscode/
+.classpath
+.factorypath
+.project
+.settings/
 
 backend/target/
 
