@@ -10,7 +10,7 @@
 | ---- | ---- |
 | 后端框架 | Spring Boot 3.3.5（Java 17） |
 | 持久层 | MyBatis（注解模式） + HikariCP |
-| 数据库 | MySQL 8.4 |
+| 数据库 | MySQL 8.4 / H2（本地开发） |
 | 会话管理 | HttpSession（服务端 Session） |
 | 前端框架 | Vue 3 + Vue Router 4 |
 | 前端构建 | Vite 6 |
@@ -47,7 +47,9 @@ springboot-reminders/
 │       │   └── service/                          # 业务逻辑层
 │       └── resources/
 │           ├── application.yml                   # 应用配置
-│           └── schema.sql                        # 数据库建表脚本
+│           ├── application-local.yml             # 本地 H2 配置
+│           ├── schema.sql                        # MySQL 建表脚本
+│           └── schema-local.sql                  # H2 本地建表脚本
 ├── frontend/                       # Vue 3 前端
 │   ├── index.html
 │   ├── vite.config.js              # 含反向代理配置
@@ -124,7 +126,7 @@ todo           — 待办表（id, user_id, category_id, title, notes, status, d
 - Java 17+
 - Maven 3.8+
 - Node.js 18+ / npm 9+
-- Docker & Docker Compose（推荐用于启动 MySQL）
+- Docker & Docker Compose（如需使用 MySQL）
 
 ---
 
@@ -149,7 +151,38 @@ make frontend
 
 ---
 
-### 方式二：手动启动
+### 方式二：本地快速启动（不依赖 Docker）
+
+适用于本地联调、接口测试、单人开发。后端使用 `application-local.yml` 中的 H2 内存数据库启动，不需要安装或启动 MySQL。
+
+#### 第一步：启动后端
+
+```bash
+cd backend
+SPRING_PROFILES_ACTIVE=local mvn spring-boot:run
+```
+
+后端启动后监听 `http://localhost:8080`，并自动执行 `schema-local.sql` 初始化表结构。
+
+如需查看 H2 控制台，可访问 `http://localhost:8080/h2-console`，JDBC URL 使用：
+
+```text
+jdbc:h2:mem:reminder_db
+```
+
+#### 第二步：启动前端
+
+```bash
+cd frontend
+npm install    # 首次运行时安装依赖
+npm run dev
+```
+
+前端启动后监听 `http://localhost:5173`，`/api` 请求会被反向代理至 `localhost:8080`。
+
+---
+
+### 方式三：手动启动 MySQL 版本
 
 #### 第一步：启动 MySQL 数据库
 
@@ -225,5 +258,6 @@ make clean            # 删除 target/ 和 dist/ 构建产物
 ## 注意事项
 
 - Docker Compose 的 MySQL 默认账号密码均为 `root`，与 `application.yml` 保持一致，无需额外修改。
+- 本地无 Docker 场景可使用 `SPRING_PROFILES_ACTIVE=local` 启动后端，此时使用 H2 内存数据库，重启应用后数据会清空。
 - `make db-reset` 会执行 `docker compose down -v`，**会清空所有数据**，仅在需要重置数据库时使用。
 - 后端通过 `HttpSession` 管理登录状态，不使用 JWT；关闭浏览器 Tab 后 Session 仍有效，直到调用 `/api/user/logout` 或 Session 过期。
